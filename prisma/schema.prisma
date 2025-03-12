@@ -1,0 +1,118 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Order status enum
+enum OrderStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  CANCELLED
+  SHIPPED
+  DELIVERED
+}
+
+// Payment status enum
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+// Payment provider enum
+enum PaymentProvider {
+  LINE_PAY
+  ECPAY
+  JKO_PAY
+  CONVENIENCE_STORE
+}
+
+// Order model
+model Order {
+  id            String         @id @default(cuid())
+  orderNumber   String         @unique
+  status        OrderStatus    @default(PENDING)
+  totalAmount   Float
+  currency      String         @default("TWD")
+  customerId    String
+  customerEmail String
+  customerName  String
+  customerPhone String?
+  shippingAddress Json
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  items         OrderItem[]
+  payments      Payment[]
+  shipping      Shipping?
+
+  @@index([status])
+  @@index([customerId])
+}
+
+// Order item model
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  productId   String
+  productName String
+  quantity    Int
+  price       Float
+  order       Order    @relation(fields: [orderId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([orderId])
+}
+
+// Payment model
+model Payment {
+  id              String          @id @default(cuid())
+  orderId         String
+  amount          Float
+  currency        String          @default("TWD")
+  status          PaymentStatus   @default(PENDING)
+  provider        PaymentProvider
+  providerOrderId String?         // External order ID from payment provider
+  transactionId   String?         // External transaction ID from payment provider
+  paymentUrl      String?         // URL for payment (if applicable)
+  paymentCode     String?         // Payment code (for convenience store)
+  metadata        Json?           // Additional payment provider specific data
+  order           Order           @relation(fields: [orderId], references: [id])
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([orderId])
+  @@index([status])
+  @@index([provider])
+  @@index([transactionId])
+}
+
+// Shipping model
+model Shipping {
+  id            String   @id @default(cuid())
+  orderId       String   @unique
+  trackingNumber String?
+  carrier       String?
+  status        String   @default("PENDING")
+  estimatedDelivery DateTime?
+  order         Order    @relation(fields: [orderId], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([orderId])
+  @@index([status])
+}

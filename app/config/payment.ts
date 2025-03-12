@@ -116,3 +116,104 @@ export const CONVENIENCE_STORE_CONFIG = {
     maxAmount: 20000 // NT$
   }
 }
+
+// Payment provider types
+export type PaymentProvider = 'LINE_PAY' | 'JKO_PAY' | 'ECPAY' | 'CONVENIENCE_STORE'
+
+// Environment configuration
+const config = {
+  // API URLs
+  apiUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
+  
+  // LINE Pay configuration
+  linePay: {
+    channelId: process.env.LINE_PAY_CHANNEL_ID,
+    channelSecret: process.env.LINE_PAY_CHANNEL_SECRET,
+    returnUrl: process.env.LINE_PAY_RETURN_URL || 'http://localhost:3000/checkout/success',
+    cancelUrl: process.env.LINE_PAY_CANCEL_URL || 'http://localhost:3000/checkout/cancel',
+    apiUrl: process.env.NODE_ENV === 'production'
+      ? 'https://api.line.me/v2/payments'
+      : 'https://sandbox-api.line.me/v2/payments',
+  },
+
+  // ECPay configuration
+  ecPay: {
+    merchantId: process.env.ECPAY_MERCHANT_ID,
+    hashKey: process.env.ECPAY_HASH_KEY,
+    hashIv: process.env.ECPAY_HASH_IV,
+    returnUrl: process.env.ECPAY_RETURN_URL || 'http://localhost:3000/checkout/success',
+    cancelUrl: process.env.ECPAY_CANCEL_URL || 'http://localhost:3000/checkout/cancel',
+    apiUrl: process.env.NODE_ENV === 'production'
+      ? 'https://payment.ecpay.com.tw/Cashier/AioCheckOut/V5'
+      : 'https://payment-stage.ecpay.com.tw/Cashier/AioCheckOut/V5',
+  },
+
+  // JKO Pay configuration
+  jkoPay: {
+    apiKey: process.env.JKO_PAY_API_KEY,
+    returnUrl: process.env.JKO_PAY_RETURN_URL || 'http://localhost:3000/checkout/success',
+    cancelUrl: process.env.JKO_PAY_CANCEL_URL || 'http://localhost:3000/checkout/cancel',
+    apiUrl: process.env.NODE_ENV === 'production'
+      ? 'https://api.jkopay.com/v1/payments'
+      : 'https://sandbox-api.jkopay.com/v1/payments',
+  },
+
+  // Convenience Store configuration
+  convenienceStore: {
+    apiKey: process.env.CONVENIENCE_STORE_API_KEY,
+    returnUrl: process.env.CONVENIENCE_STORE_RETURN_URL || 'http://localhost:3000/checkout/success',
+    cancelUrl: process.env.CONVENIENCE_STORE_CANCEL_URL || 'http://localhost:3000/checkout/cancel',
+    apiUrl: process.env.NODE_ENV === 'production'
+      ? 'https://api.convenience-store.com/v1/payments'
+      : 'https://sandbox-api.convenience-store.com/v1/payments',
+  },
+
+  // Webhook configuration
+  webhook: {
+    secret: process.env.WEBHOOK_SECRET,
+    url: process.env.WEBHOOK_URL || 'https://your-domain.com/api/payments/webhook',
+  },
+
+  // Payment configuration
+  payment: {
+    defaultCurrency: process.env.DEFAULT_CURRENCY || 'TWD',
+    minimumAmount: Number(process.env.MINIMUM_PAYMENT_AMOUNT) || 1,
+    maximumAmount: Number(process.env.MAXIMUM_PAYMENT_AMOUNT) || 100000,
+    timeoutMinutes: Number(process.env.PAYMENT_TIMEOUT_MINUTES) || 30,
+  },
+
+  // Security configuration
+  security: {
+    encryptionKey: process.env.ENCRYPTION_KEY,
+    jwtSecret: process.env.JWT_SECRET,
+  },
+}
+
+// Validate required environment variables
+function validateConfig() {
+  const requiredVars = [
+    'LINE_PAY_CHANNEL_ID',
+    'LINE_PAY_CHANNEL_SECRET',
+    'ECPAY_MERCHANT_ID',
+    'ECPAY_HASH_KEY',
+    'ECPAY_HASH_IV',
+    'JKO_PAY_API_KEY',
+    'CONVENIENCE_STORE_API_KEY',
+    'WEBHOOK_SECRET',
+    'ENCRYPTION_KEY',
+    'JWT_SECRET',
+  ]
+
+  const missingVars = requiredVars.filter(varName => !process.env[varName])
+
+  if (missingVars.length > 0) {
+    throw new Error(
+      `Missing required environment variables: ${missingVars.join(', ')}`
+    )
+  }
+}
+
+// Validate configuration on import
+validateConfig()
+
+export default config
